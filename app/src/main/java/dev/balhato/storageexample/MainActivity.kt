@@ -132,19 +132,28 @@ class MainActivity : AppCompatActivity() {
         loadPhotosFromExternalStorageIntoRecyclerView()
     }
 
-    private fun initContentObserver() {
-        contentObserver = object : ContentObserver(null) {
-            override fun onChange(selfChange: Boolean) {
-                if (readPermissionGranted) {
-                    loadPhotosFromExternalStorageIntoRecyclerView()
-                }
-            }
+    private fun setUpInternalStorageRecyclerView() = binding.rvPrivatePhotos.apply {
+        adapter = internalStoragePhotoAdapter
+        layoutManager = StaggeredGridLayoutManager(3, RecyclerView.VERTICAL)
+    }
+
+    private fun setUpExternalStorageRecyclerView() = binding.rvPublicPhotos.apply {
+        adapter = externalStoragePhotoAdapter
+        layoutManager = StaggeredGridLayoutManager(3, RecyclerView.VERTICAL)
+    }
+
+    private fun loadPhotosFromInternalStorageIntoRecyclerView() {
+        lifecycleScope.launch {
+            val photos = loadPhotosFromInternalStorage()
+            internalStoragePhotoAdapter.submitList(photos)
         }
-        contentResolver.registerContentObserver(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            true,
-            contentObserver
-        )
+    }
+
+    private fun loadPhotosFromExternalStorageIntoRecyclerView() {
+        lifecycleScope.launch {
+            val photos = loadPhotosFromExternalStorage()
+            externalStoragePhotoAdapter.submitList(photos)
+        }
     }
 
     private suspend fun deletePhotoFromExternalStorage(photoUri: Uri) {
@@ -169,6 +178,21 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun initContentObserver() {
+        contentObserver = object : ContentObserver(null) {
+            override fun onChange(selfChange: Boolean) {
+                if (readPermissionGranted) {
+                    loadPhotosFromExternalStorageIntoRecyclerView()
+                }
+            }
+        }
+        contentResolver.registerContentObserver(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            true,
+            contentObserver
+        )
     }
 
     private suspend fun loadPhotosFromExternalStorage(): List<SharedStoragePhoto> {
@@ -266,30 +290,6 @@ class MainActivity : AppCompatActivity() {
                 ex.printStackTrace()
                 false
             }
-        }
-    }
-
-    private fun setUpInternalStorageRecyclerView() = binding.rvPrivatePhotos.apply {
-        adapter = internalStoragePhotoAdapter
-        layoutManager = StaggeredGridLayoutManager(3, RecyclerView.VERTICAL)
-    }
-
-    private fun setUpExternalStorageRecyclerView() = binding.rvPublicPhotos.apply {
-        adapter = externalStoragePhotoAdapter
-        layoutManager = StaggeredGridLayoutManager(3, RecyclerView.VERTICAL)
-    }
-
-    private fun loadPhotosFromInternalStorageIntoRecyclerView() {
-        lifecycleScope.launch {
-            val photos = loadPhotosFromInternalStorage()
-            internalStoragePhotoAdapter.submitList(photos)
-        }
-    }
-
-    private fun loadPhotosFromExternalStorageIntoRecyclerView() {
-        lifecycleScope.launch {
-            val photos = loadPhotosFromExternalStorage()
-            externalStoragePhotoAdapter.submitList(photos)
         }
     }
 
